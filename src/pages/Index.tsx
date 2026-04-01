@@ -69,7 +69,24 @@ const Index = () => {
 
         {/* Center chart */}
         <div className="flex-1 min-w-0">
-          <CandleChart candles={candles} hmm={hmm} />
+          {/* Timeframe selector */}
+          <div className="flex gap-1 mb-2">
+            {TIMEFRAMES.map(tf => (
+              <button
+                key={tf.granularity}
+                onClick={() => setGranularity(tf.granularity)}
+                className={cn(
+                  'px-3 py-1.5 rounded text-xs font-mono font-medium transition-colors',
+                  granularity === tf.granularity
+                    ? 'bg-primary/20 text-primary'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {tf.label}
+              </button>
+            ))}
+          </div>
+          <CandleChart candles={candles} hmm={hmm} timeframeLabel={activeTimeframe?.label || '1m'} />
 
           {/* Disclaimer */}
           <div className="mt-2 px-2">

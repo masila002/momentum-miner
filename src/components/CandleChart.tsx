@@ -5,9 +5,10 @@ import type { HMMResult } from '@/lib/hmm';
 interface CandleChartProps {
   candles: Candle[];
   hmm: HMMResult | null;
+  timeframeLabel?: string;
 }
 
-export function CandleChart({ candles, hmm }: CandleChartProps) {
+export function CandleChart({ candles, hmm, timeframeLabel = '1M' }: CandleChartProps) {
   const displayCandles = candles.slice(-60);
 
   const chart = useMemo(() => {

@@ -107,7 +107,7 @@ export function useDerivWebSocket(symbol: string, granularity: number = 60) {
     return () => {
       disconnect();
     };
-  }, [symbol, disconnect]);
+  }, [symbol, granularity, disconnect]);
 
   return { candles, currentPrice, connected, error };
 }
