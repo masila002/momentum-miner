@@ -5,12 +5,14 @@ import { analyzeWithHMM } from '@/lib/hmm';
 import { MarketSelector } from '@/components/MarketSelector';
 import { SignalPanel } from '@/components/SignalPanel';
 import { CandleChart } from '@/components/CandleChart';
-import { MARKETS } from '@/lib/markets';
+import { MARKETS, TIMEFRAMES } from '@/lib/markets';
 import { Activity, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const Index = () => {
   const [symbol, setSymbol] = useState('R_100');
-  const { candles, currentPrice, connected, error } = useDerivWebSocket(symbol);
+  const [granularity, setGranularity] = useState(60);
+  const { candles, currentPrice, connected, error } = useDerivWebSocket(symbol, granularity);
 
   const analysis = useMemo(() => analyzeCandles(candles), [candles]);
   const hmm = useMemo(() => {
@@ -19,6 +21,7 @@ const Index = () => {
   }, [candles]);
 
   const market = MARKETS.find(m => m.symbol === symbol);
+  const activeTimeframe = TIMEFRAMES.find(t => t.granularity === granularity);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
