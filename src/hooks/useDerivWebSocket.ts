@@ -8,7 +8,7 @@ interface TickData {
   quote: number;
 }
 
-export function useDerivWebSocket(symbol: string) {
+export function useDerivWebSocket(symbol: string, granularity: number = 60) {
   const [candles, setCandles] = useState<Candle[]>([]);
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [connected, setConnected] = useState(false);
