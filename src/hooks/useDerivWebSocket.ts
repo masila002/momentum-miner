@@ -41,7 +41,7 @@ export function useDerivWebSocket(symbol: string, granularity: number = 60) {
         adjust_start_time: 1,
         count: 100,
         end: 'latest',
-        granularity: 60,
+        granularity,
         style: 'candles',
         subscribe: 1,
       }));
