@@ -31,3 +31,15 @@ export const MARKET_CATEGORIES = [
   { id: 'boom' as const, label: 'Boom' },
   { id: 'crash' as const, label: 'Crash' },
 ];
+
+export interface Timeframe {
+  label: string;
+  granularity: number; // seconds
+}
+
+export const TIMEFRAMES: Timeframe[] = [
+  { label: '30s', granularity: 30 },
+  { label: '1m', granularity: 60 },
+  { label: '2m', granularity: 120 },
+  { label: '5m', granularity: 300 },
+];

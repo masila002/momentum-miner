@@ -5,9 +5,10 @@ import type { HMMResult } from '@/lib/hmm';
 interface CandleChartProps {
   candles: Candle[];
   hmm: HMMResult | null;
+  timeframeLabel?: string;
 }
 
-export function CandleChart({ candles, hmm }: CandleChartProps) {
+export function CandleChart({ candles, hmm, timeframeLabel = '1M' }: CandleChartProps) {
   const displayCandles = candles.slice(-60);
 
   const chart = useMemo(() => {
@@ -128,7 +129,7 @@ export function CandleChart({ candles, hmm }: CandleChartProps) {
   return (
     <div className="terminal-panel flex-1">
       <div className="terminal-header">
-        <span className="text-sm font-mono font-semibold text-foreground">CHART — 1M</span>
+        <span className="text-sm font-mono font-semibold text-foreground">CHART — {timeframeLabel}</span>
         <span className="text-[10px] font-mono text-muted-foreground">{displayCandles.length} candles</span>
       </div>
       <div className="p-2" style={{ background: 'hsl(220 20% 8%)' }}>
