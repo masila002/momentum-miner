@@ -1,4 +1,4 @@
-import { MARKETS, MARKET_CATEGORIES, type Market } from '@/lib/markets';
+import { MARKETS, MARKET_CATEGORIES } from '@/lib/markets';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -9,51 +9,56 @@ interface MarketSelectorProps {
 
 export function MarketSelector({ selected, onSelect }: MarketSelectorProps) {
   const [activeCategory, setActiveCategory] = useState<string>('volatility');
-
   const filtered = MARKETS.filter(m => m.category === activeCategory);
 
   return (
-    <div className="terminal-panel">
-      <div className="terminal-header">
-        <span className="text-sm font-mono font-semibold text-foreground">MARKETS</span>
+    <div className="terminal-panel h-full flex flex-col">
+      <div className="terminal-header py-1.5 px-3">
+        <span className="text-[11px] font-mono font-semibold text-foreground tracking-wider">WATCHLIST</span>
       </div>
-      <div className="p-3 space-y-3">
-        {/* Category tabs */}
-        <div className="flex gap-1">
-          {MARKET_CATEGORIES.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={cn(
-                'px-3 py-1.5 rounded text-xs font-mono font-medium transition-colors',
-                activeCategory === cat.id
-                  ? 'bg-primary/20 text-primary'
-                  : 'bg-secondary text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
 
-        {/* Market list */}
-        <div className="grid grid-cols-2 gap-1.5">
-          {filtered.map(market => (
-            <button
-              key={market.symbol}
-              onClick={() => onSelect(market.symbol)}
-              className={cn(
-                'px-3 py-2 rounded text-xs font-mono text-left transition-all',
-                selected === market.symbol
-                  ? 'bg-primary/15 text-primary border border-primary/30'
-                  : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent'
-              )}
-            >
-              <div className="font-semibold">{market.label}</div>
-              <div className="text-[10px] opacity-60">{market.symbol}</div>
-            </button>
-          ))}
-        </div>
+      {/* Category tabs - compact */}
+      <div className="flex border-b border-border">
+        {MARKET_CATEGORIES.map(cat => (
+          <button
+            key={cat.id}
+            onClick={() => setActiveCategory(cat.id)}
+            className={cn(
+              'flex-1 px-1 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider transition-colors border-b-2',
+              activeCategory === cat.id
+                ? 'text-primary border-primary bg-primary/5'
+                : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-secondary/50'
+            )}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Market list - compact rows */}
+      <div className="flex-1 overflow-y-auto">
+        {filtered.map(market => (
+          <button
+            key={market.symbol}
+            onClick={() => onSelect(market.symbol)}
+            className={cn(
+              'w-full px-3 py-1.5 flex items-center justify-between text-left transition-all border-b border-border/30',
+              selected === market.symbol
+                ? 'bg-primary/10 border-l-2 border-l-primary'
+                : 'hover:bg-secondary/50 border-l-2 border-l-transparent'
+            )}
+          >
+            <div>
+              <div className={cn(
+                'text-[10px] font-mono font-semibold',
+                selected === market.symbol ? 'text-primary' : 'text-foreground'
+              )}>
+                {market.label}
+              </div>
+              <div className="text-[8px] font-mono text-muted-foreground/50">{market.symbol}</div>
+            </div>
+          </button>
+        ))}
       </div>
     </div>
   );

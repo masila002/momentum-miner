@@ -1,18 +1,26 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useDerivWebSocket } from '@/hooks/useDerivWebSocket';
 import { analyzeCandles } from '@/lib/indicators';
 import { analyzeWithHMM } from '@/lib/hmm';
 import { MarketSelector } from '@/components/MarketSelector';
 import { SignalPanel } from '@/components/SignalPanel';
 import { CandleChart } from '@/components/CandleChart';
+import { MarketPressure } from '@/components/MarketPressure';
+import { TickerBar } from '@/components/TickerBar';
 import { MARKETS, TIMEFRAMES } from '@/lib/markets';
-import { Activity, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const Index = () => {
   const [symbol, setSymbol] = useState('R_100');
   const [granularity, setGranularity] = useState(60);
   const { candles, currentPrice, connected, error } = useDerivWebSocket(symbol, granularity);
+  const prevPriceRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (currentPrice !== null) {
+      prevPriceRef.current = currentPrice;
+    }
+  }, [currentPrice]);
 
   const analysis = useMemo(() => analyzeCandles(candles), [candles]);
   const hmm = useMemo(() => {
@@ -24,83 +32,78 @@ const Index = () => {
   const activeTimeframe = TIMEFRAMES.find(t => t.granularity === granularity);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Activity className="w-5 h-5 text-primary" />
-          <h1 className="text-base font-mono font-bold text-foreground tracking-tight">
-            DERIV SIGNAL TERMINAL
-          </h1>
-        </div>
-        <div className="flex items-center gap-3">
-          {market && (
-            <span className="text-xs font-mono text-muted-foreground">
-              {market.label}
-            </span>
-          )}
-          <div className="flex items-center gap-1.5">
-            {connected ? (
-              <Wifi className="w-3.5 h-3.5 text-bullish" />
-            ) : (
-              <WifiOff className="w-3.5 h-3.5 text-bearish" />
-            )}
-            <span className={`text-[10px] font-mono ${connected ? 'text-bullish' : 'text-bearish'}`}>
-              {connected ? 'LIVE' : 'OFFLINE'}
-            </span>
-          </div>
-        </div>
-      </header>
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
+      {/* Top Menu Bar - DAS style */}
+      <div className="h-8 bg-card border-b border-border flex items-center px-3 gap-4 shrink-0">
+        <span className="text-[11px] font-mono font-black text-primary tracking-widest">DST</span>
+        <div className="w-px h-4 bg-border" />
+        <span className="text-[10px] font-mono text-muted-foreground">DERIV SIGNAL TERMINAL</span>
+        <div className="flex-1" />
+        {error && (
+          <span className="text-[9px] font-mono text-destructive">⚠ {error}</span>
+        )}
+      </div>
 
-      {/* Error banner */}
-      {error && (
-        <div className="px-4 py-2 bg-destructive/10 border-b border-destructive/20 flex items-center gap-2">
-          <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
-          <span className="text-xs font-mono text-destructive">{error}</span>
-        </div>
-      )}
+      {/* Ticker Bar */}
+      <TickerBar
+        symbol={symbol}
+        marketLabel={market?.label || ''}
+        currentPrice={currentPrice}
+        connected={connected}
+        previousPrice={prevPriceRef.current}
+      />
 
-      {/* Main layout */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-3 p-3">
-        {/* Left sidebar */}
-        <div className="lg:w-56 shrink-0 space-y-3">
+      {/* Main Content - 3 column DAS layout */}
+      <div className="flex-1 flex min-h-0">
+        {/* Left Panel - Watchlist */}
+        <div className="w-44 border-r border-border shrink-0 flex flex-col">
           <MarketSelector selected={symbol} onSelect={setSymbol} />
         </div>
 
-        {/* Center chart */}
-        <div className="flex-1 min-w-0">
-          {/* Timeframe selector */}
-          <div className="flex gap-1 mb-2">
+        {/* Center - Chart */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Timeframe toolbar */}
+          <div className="h-7 bg-card/50 border-b border-border flex items-center px-2 gap-0.5 shrink-0">
             {TIMEFRAMES.map(tf => (
               <button
                 key={tf.granularity}
                 onClick={() => setGranularity(tf.granularity)}
                 className={cn(
-                  'px-3 py-1.5 rounded text-xs font-mono font-medium transition-colors',
+                  'px-2.5 py-1 text-[9px] font-mono font-bold uppercase tracking-wider transition-colors rounded-sm',
                   granularity === tf.granularity
                     ? 'bg-primary/20 text-primary'
-                    : 'bg-secondary text-muted-foreground hover:text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                 )}
               >
                 {tf.label}
               </button>
             ))}
+            <div className="flex-1" />
+            <span className="text-[8px] font-mono text-muted-foreground/40">
+              ⚠ Educational only — not financial advice
+            </span>
           </div>
-          <CandleChart candles={candles} hmm={hmm} timeframeLabel={activeTimeframe?.label || '1m'} />
 
-          {/* Disclaimer */}
-          <div className="mt-2 px-2">
-            <p className="text-[10px] font-mono text-muted-foreground/60 leading-relaxed">
-              ⚠ This tool is for educational purposes only. No indicator can predict future price movements.
-              Trade at your own risk. Past performance does not guarantee future results.
-            </p>
+          {/* Chart area */}
+          <div className="flex-1 min-h-0">
+            <CandleChart candles={candles} hmm={hmm} timeframeLabel={activeTimeframe?.label || '1m'} />
           </div>
         </div>
 
-        {/* Right panel */}
-        <div className="lg:w-64 shrink-0">
-          <SignalPanel analysis={analysis} hmm={hmm} currentPrice={currentPrice} symbol={symbol} />
+        {/* Right Panel - Signal + Pressure */}
+        <div className="w-52 border-l border-border shrink-0 overflow-y-auto">
+          <div className="p-1.5 space-y-1.5">
+            <SignalPanel analysis={analysis} hmm={hmm} currentPrice={currentPrice} symbol={symbol} />
+            <MarketPressure candles={candles} hmm={hmm} />
+          </div>
         </div>
+      </div>
+
+      {/* Bottom status bar */}
+      <div className="h-5 bg-card border-t border-border flex items-center px-3 shrink-0">
+        <span className="text-[8px] font-mono text-muted-foreground/40">
+          Deriv Signal Terminal v1.0 — WebSocket: {connected ? 'Connected' : 'Disconnected'} — {candles.length} candles loaded
+        </span>
       </div>
     </div>
   );
