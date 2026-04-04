@@ -47,6 +47,20 @@ export function useDerivWebSocket(symbol: string, granularity: number = 60) {
         return;
       }
 
+      // After authorization, request candle history
+      if (data.authorize) {
+        ws.send(JSON.stringify({
+          ticks_history: symbolRef.current,
+          adjust_start_time: 1,
+          count: 100,
+          end: 'latest',
+          granularity,
+          style: 'candles',
+          subscribe: 1,
+        }));
+        return;
+      }
+
       // Historical candles
       if (data.candles) {
         const hist: Candle[] = data.candles.map((c: any) => ({
