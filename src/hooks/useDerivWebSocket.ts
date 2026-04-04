@@ -35,16 +35,8 @@ export function useDerivWebSocket(symbol: string, granularity: number = 60) {
 
     ws.onopen = () => {
       setConnected(true);
-      // Request candle history (1 minute candles, last 100)
-      ws.send(JSON.stringify({
-        ticks_history: symbol,
-        adjust_start_time: 1,
-        count: 100,
-        end: 'latest',
-        granularity,
-        style: 'candles',
-        subscribe: 1,
-      }));
+      // Authorize first, then request candles
+      ws.send(JSON.stringify({ authorize: 'snbK3tya1C5W0Ap' }));
     };
 
     ws.onmessage = (event) => {
@@ -52,6 +44,20 @@ export function useDerivWebSocket(symbol: string, granularity: number = 60) {
 
       if (data.error) {
         setError(data.error.message);
+        return;
+      }
+
+      // After authorization, request candle history
+      if (data.authorize) {
+        ws.send(JSON.stringify({
+          ticks_history: symbolRef.current,
+          adjust_start_time: 1,
+          count: 100,
+          end: 'latest',
+          granularity,
+          style: 'candles',
+          subscribe: 1,
+        }));
         return;
       }
 
