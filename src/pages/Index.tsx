@@ -49,6 +49,12 @@ const Index = () => {
     return analyzeMultiTimeframe(mtfData, ALL_GRANULARITIES);
   }, [mtfData]);
 
+  // Auto-calculate trade levels based on confirmed signal
+  const tradeLevels = useMemo(() => {
+    const signal = multiTF?.confirmedSignal ?? analysis?.signal ?? 'NEUTRAL';
+    return calculateTradeLevels(candles, signal, currentPrice);
+  }, [candles, currentPrice, multiTF, analysis]);
+
   const market = MARKETS.find(m => m.symbol === symbol);
   const activeTimeframe = TIMEFRAMES.find(t => t.granularity === granularity);
 
