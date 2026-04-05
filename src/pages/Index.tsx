@@ -4,10 +4,12 @@ import { useMultiTimeframe } from '@/hooks/useMultiTimeframe';
 import { analyzeCandles } from '@/lib/indicators';
 import { analyzeWithHMM } from '@/lib/hmm';
 import { analyzeMultiTimeframe, resetSignalState } from '@/lib/signalEngine';
+import { calculateTradeLevels } from '@/lib/tradeLevels';
 import { MarketSelector } from '@/components/MarketSelector';
 import { SignalPanel } from '@/components/SignalPanel';
 import { CandleChart } from '@/components/CandleChart';
 import { MarketPressure } from '@/components/MarketPressure';
+import { TradeLevelsPanel } from '@/components/TradeLevelsPanel';
 import { TickerBar } from '@/components/TickerBar';
 import { MARKETS, TIMEFRAMES } from '@/lib/markets';
 import { cn } from '@/lib/utils';
@@ -46,6 +48,12 @@ const Index = () => {
   const multiTF = useMemo(() => {
     return analyzeMultiTimeframe(mtfData, ALL_GRANULARITIES);
   }, [mtfData]);
+
+  // Auto-calculate trade levels based on confirmed signal
+  const tradeLevels = useMemo(() => {
+    const signal = multiTF?.confirmedSignal ?? analysis?.signal ?? 'NEUTRAL';
+    return calculateTradeLevels(candles, signal, currentPrice);
+  }, [candles, currentPrice, multiTF, analysis]);
 
   const market = MARKETS.find(m => m.symbol === symbol);
   const activeTimeframe = TIMEFRAMES.find(t => t.granularity === granularity);
@@ -105,7 +113,7 @@ const Index = () => {
 
           {/* Chart area */}
           <div className="flex-1 min-h-0">
-            <CandleChart candles={candles} hmm={hmm} timeframeLabel={activeTimeframe?.label || '1m'} />
+            <CandleChart candles={candles} hmm={hmm} timeframeLabel={activeTimeframe?.label || '1m'} tradeLevels={tradeLevels} />
           </div>
         </div>
 
@@ -113,6 +121,7 @@ const Index = () => {
         <div className="w-52 border-l border-border shrink-0 overflow-y-auto">
           <div className="p-1.5 space-y-1.5">
             <SignalPanel analysis={analysis} hmm={hmm} currentPrice={currentPrice} symbol={symbol} multiTF={multiTF} />
+            <TradeLevelsPanel levels={tradeLevels} />
             <MarketPressure candles={candles} hmm={hmm} />
           </div>
         </div>
