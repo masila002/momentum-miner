@@ -113,7 +113,7 @@ const Index = () => {
 
           {/* Chart area */}
           <div className="flex-1 min-h-0">
-            <CandleChart candles={candles} hmm={hmm} timeframeLabel={activeTimeframe?.label || '1m'} />
+            <CandleChart candles={candles} hmm={hmm} timeframeLabel={activeTimeframe?.label || '1m'} tradeLevels={tradeLevels} />
           </div>
         </div>
 
@@ -121,6 +121,7 @@ const Index = () => {
         <div className="w-52 border-l border-border shrink-0 overflow-y-auto">
           <div className="p-1.5 space-y-1.5">
             <SignalPanel analysis={analysis} hmm={hmm} currentPrice={currentPrice} symbol={symbol} multiTF={multiTF} />
+            <TradeLevelsPanel levels={tradeLevels} />
             <MarketPressure candles={candles} hmm={hmm} />
           </div>
         </div>
