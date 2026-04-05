@@ -12,9 +12,12 @@ export const MARKETS: Market[] = [
   { symbol: 'R_75', label: 'Volatility 75', category: 'volatility' },
   { symbol: 'R_100', label: 'Volatility 100', category: 'volatility' },
   { symbol: '1HZ10V', label: 'Volatility 10 (1s)', category: 'volatility' },
+  { symbol: '1HZ15V', label: 'Volatility 15 (1s)', category: 'volatility' },
   { symbol: '1HZ25V', label: 'Volatility 25 (1s)', category: 'volatility' },
+  { symbol: '1HZ30V', label: 'Volatility 30 (1s)', category: 'volatility' },
   { symbol: '1HZ50V', label: 'Volatility 50 (1s)', category: 'volatility' },
   { symbol: '1HZ75V', label: 'Volatility 75 (1s)', category: 'volatility' },
+  { symbol: '1HZ90V', label: 'Volatility 90 (1s)', category: 'volatility' },
   { symbol: '1HZ100V', label: 'Volatility 100 (1s)', category: 'volatility' },
   // Boom
   { symbol: 'BOOM300N', label: 'Boom 300', category: 'boom' },
@@ -38,7 +41,6 @@ export interface Timeframe {
 }
 
 export const TIMEFRAMES: Timeframe[] = [
-  { label: '30s', granularity: 30 },
   { label: '1m', granularity: 60 },
   { label: '2m', granularity: 120 },
   { label: '5m', granularity: 300 },
