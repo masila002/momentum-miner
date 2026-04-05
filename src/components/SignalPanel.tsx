@@ -1,12 +1,14 @@
 import type { AnalysisResult } from '@/lib/indicators';
 import type { HMMResult } from '@/lib/hmm';
-import { TrendingUp, TrendingDown, Minus, Brain } from 'lucide-react';
+import type { MultiTFSignal } from '@/lib/signalEngine';
+import { TrendingUp, TrendingDown, Minus, Brain, ShieldCheck, Clock, ArrowUpCircle, ArrowDownCircle, CircleDot } from 'lucide-react';
 
 interface SignalPanelProps {
   analysis: AnalysisResult | null;
   hmm: HMMResult | null;
   currentPrice: number | null;
   symbol: string;
+  multiTF?: MultiTFSignal | null;
 }
 
 function SignalBadge({ signal }: { signal: string }) {
@@ -54,13 +56,25 @@ function RegimeBadge({ regime }: { regime: string }) {
   return <span className={classMap[regime] || 'regime-sideways'}>{regime.toUpperCase()}</span>;
 }
 
-export function SignalPanel({ analysis, hmm, currentPrice, symbol }: SignalPanelProps) {
+function TrendIcon({ direction }: { direction: 'up' | 'down' | 'flat' }) {
+  if (direction === 'up') return <ArrowUpCircle className="w-3.5 h-3.5 text-bullish" />;
+  if (direction === 'down') return <ArrowDownCircle className="w-3.5 h-3.5 text-bearish" />;
+  return <CircleDot className="w-3.5 h-3.5 text-neutral" />;
+}
+
+export function SignalPanel({ analysis, hmm, currentPrice, symbol, multiTF }: SignalPanelProps) {
+  const displaySignal = multiTF?.confirmedSignal ?? analysis?.signal ?? 'NEUTRAL';
+  const displayScore = multiTF?.confirmedScore ?? analysis?.score ?? 0;
+
   return (
     <div className="space-y-1.5">
-      {/* Signal + Price */}
+      {/* Confirmed Signal + Price */}
       <div className="terminal-panel">
         <div className="terminal-header py-1.5 px-3">
-          <span className="text-[11px] font-mono font-semibold text-foreground tracking-wider">SIGNAL</span>
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-3 h-3 text-accent" />
+            <span className="text-[11px] font-mono font-semibold text-foreground tracking-wider">CONFIRMED</span>
+          </div>
           <span className="text-[9px] font-mono text-muted-foreground">{symbol}</span>
         </div>
         <div className="p-3 text-center space-y-2">
@@ -69,25 +83,76 @@ export function SignalPanel({ analysis, hmm, currentPrice, symbol }: SignalPanel
               {currentPrice.toFixed(currentPrice > 100 ? 2 : 4)}
             </div>
           )}
-          {analysis ? (
-            <>
-              <SignalBadge signal={analysis.signal} />
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-[9px] text-muted-foreground font-mono">SCORE</span>
-                <span className={`text-xs font-mono font-bold ${
-                  analysis.score > 0 ? 'text-bullish' : analysis.score < 0 ? 'text-bearish' : 'text-neutral'
-                }`}>
-                  {analysis.score > 0 ? '+' : ''}{analysis.score}
-                </span>
-              </div>
-            </>
-          ) : (
-            <div className="text-[10px] text-muted-foreground font-mono">Loading...</div>
+          <SignalBadge signal={displaySignal} />
+          <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] text-muted-foreground font-mono">SCORE</span>
+              <span className={`text-xs font-mono font-bold ${
+                displayScore > 0 ? 'text-bullish' : displayScore < 0 ? 'text-bearish' : 'text-neutral'
+              }`}>
+                {displayScore > 0 ? '+' : ''}{displayScore}
+              </span>
+            </div>
+            {multiTF && (
+              <>
+                <div className="w-px h-3 bg-border" />
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] text-muted-foreground font-mono">AGR</span>
+                  <span className="text-[10px] font-mono text-foreground">{multiTF.agreement}/{multiTF.timeframes.length}</span>
+                </div>
+              </>
+            )}
+          </div>
+          {multiTF?.cooldownActive && (
+            <div className="flex items-center justify-center gap-1 text-[9px] text-muted-foreground font-mono">
+              <Clock className="w-3 h-3" />
+              <span>COOLDOWN</span>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Indicators */}
+      {/* Multi-Timeframe Breakdown */}
+      {multiTF && (
+        <div className="terminal-panel">
+          <div className="terminal-header py-1.5 px-3">
+            <span className="text-[11px] font-mono font-semibold text-foreground tracking-wider">MULTI-TF</span>
+            <div className="flex items-center gap-1">
+              <TrendIcon direction={multiTF.trendDirection} />
+              <span className="text-[9px] font-mono text-muted-foreground uppercase">{multiTF.trendDirection}</span>
+            </div>
+          </div>
+          <div className="p-2.5">
+            {multiTF.timeframes.map(tf => (
+              <div key={tf.granularity} className="flex items-center justify-between py-1 border-b border-border/30 last:border-0">
+                <span className="text-[10px] text-muted-foreground font-mono">{tf.label}</span>
+                <div className="flex items-center gap-1.5">
+                  {tf.analysis ? (
+                    <>
+                      <span className={`text-[9px] font-mono font-bold ${
+                        tf.analysis.score > 0 ? 'text-bullish' : tf.analysis.score < 0 ? 'text-bearish' : 'text-neutral'
+                      }`}>
+                        {tf.analysis.score > 0 ? '+' : ''}{tf.analysis.score}
+                      </span>
+                      {tf.analysis.score >= 20 ? (
+                        <TrendingUp className="w-3 h-3 text-bullish" />
+                      ) : tf.analysis.score <= -20 ? (
+                        <TrendingDown className="w-3 h-3 text-bearish" />
+                      ) : (
+                        <Minus className="w-3 h-3 text-neutral" />
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-[9px] font-mono text-muted-foreground">--</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Indicators (from primary TF) */}
       <div className="terminal-panel">
         <div className="terminal-header py-1.5 px-3">
           <span className="text-[11px] font-mono font-semibold text-foreground tracking-wider">INDICATORS</span>
