@@ -1,7 +1,9 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useDerivWebSocket } from '@/hooks/useDerivWebSocket';
+import { useMultiTimeframe } from '@/hooks/useMultiTimeframe';
 import { analyzeCandles } from '@/lib/indicators';
 import { analyzeWithHMM } from '@/lib/hmm';
+import { analyzeMultiTimeframe, resetSignalState } from '@/lib/signalEngine';
 import { MarketSelector } from '@/components/MarketSelector';
 import { SignalPanel } from '@/components/SignalPanel';
 import { CandleChart } from '@/components/CandleChart';
@@ -10,11 +12,23 @@ import { TickerBar } from '@/components/TickerBar';
 import { MARKETS, TIMEFRAMES } from '@/lib/markets';
 import { cn } from '@/lib/utils';
 
+const ALL_GRANULARITIES = TIMEFRAMES.map(t => t.granularity);
+
 const Index = () => {
   const [symbol, setSymbol] = useState('R_100');
   const [granularity, setGranularity] = useState(60);
-  const { candles, currentPrice, connected, error } = useDerivWebSocket(symbol, granularity);
   const prevPriceRef = useRef<number | null>(null);
+
+  // Primary timeframe for chart display
+  const { candles, currentPrice, connected, error } = useDerivWebSocket(symbol, granularity);
+
+  // Multi-timeframe data for signal confirmation
+  const { data: mtfData, connected: mtfConnected } = useMultiTimeframe(symbol, ALL_GRANULARITIES);
+
+  // Reset signal state on symbol change
+  useEffect(() => {
+    resetSignalState();
+  }, [symbol]);
 
   useEffect(() => {
     if (currentPrice !== null) {
@@ -28,12 +42,17 @@ const Index = () => {
     return analyzeWithHMM(closes);
   }, [candles]);
 
+  // Multi-timeframe confirmed signal
+  const multiTF = useMemo(() => {
+    return analyzeMultiTimeframe(mtfData, ALL_GRANULARITIES);
+  }, [mtfData]);
+
   const market = MARKETS.find(m => m.symbol === symbol);
   const activeTimeframe = TIMEFRAMES.find(t => t.granularity === granularity);
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
-      {/* Top Menu Bar - DAS style */}
+      {/* Top Menu Bar */}
       <div className="h-8 bg-card border-b border-border flex items-center px-3 gap-4 shrink-0">
         <span className="text-[11px] font-mono font-black text-primary tracking-widest">DST</span>
         <div className="w-px h-4 bg-border" />
@@ -53,7 +72,7 @@ const Index = () => {
         previousPrice={prevPriceRef.current}
       />
 
-      {/* Main Content - 3 column DAS layout */}
+      {/* Main Content */}
       <div className="flex-1 flex min-h-0">
         {/* Left Panel - Watchlist */}
         <div className="w-44 border-r border-border shrink-0 flex flex-col">
@@ -93,7 +112,7 @@ const Index = () => {
         {/* Right Panel - Signal + Pressure */}
         <div className="w-52 border-l border-border shrink-0 overflow-y-auto">
           <div className="p-1.5 space-y-1.5">
-            <SignalPanel analysis={analysis} hmm={hmm} currentPrice={currentPrice} symbol={symbol} />
+            <SignalPanel analysis={analysis} hmm={hmm} currentPrice={currentPrice} symbol={symbol} multiTF={multiTF} />
             <MarketPressure candles={candles} hmm={hmm} />
           </div>
         </div>
@@ -102,7 +121,7 @@ const Index = () => {
       {/* Bottom status bar */}
       <div className="h-5 bg-card border-t border-border flex items-center px-3 shrink-0">
         <span className="text-[8px] font-mono text-muted-foreground/40">
-          Deriv Signal Terminal v1.0 — WebSocket: {connected ? 'Connected' : 'Disconnected'} — {candles.length} candles loaded
+          Deriv Signal Terminal v1.1 — WS: {connected ? 'Live' : 'Off'} — MTF: {mtfConnected ? 'Live' : 'Off'} — {candles.length} candles — Multi-TF confirmation active
         </span>
       </div>
     </div>
