@@ -162,7 +162,7 @@ export function SignalPanel({ analysis, hmm, currentPrice, symbol, multiTF }: Si
             <>
               <IndicatorRow label="RSI(14)" value={isNaN(analysis.rsiValue) ? '--' : analysis.rsiValue.toFixed(1)} signal={analysis.rsiSignal} />
               <IndicatorRow label="MACD" value={analysis.macdSignal > 0 ? 'Bull' : analysis.macdSignal < 0 ? 'Bear' : 'Flat'} signal={analysis.macdSignal} />
-              <IndicatorRow label="BBands" value={analysis.bbSignal > 0 ? 'OS' : analysis.bbSignal < 0 ? 'OB' : 'Mid'} signal={analysis.bbSignal} />
+              
               <IndicatorRow label="EMA 9/21" value={analysis.emaSignal > 0 ? '↑ Cross' : analysis.emaSignal < 0 ? '↓ Cross' : '—'} signal={analysis.emaSignal} />
             </>
           ) : (
