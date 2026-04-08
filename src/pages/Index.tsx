@@ -30,6 +30,7 @@ const Index = () => {
   // Reset signal state on symbol change
   useEffect(() => {
     resetSignalState();
+    setTradeLevels(null);
   }, [symbol]);
 
   useEffect(() => {
@@ -49,11 +50,30 @@ const Index = () => {
     return analyzeMultiTimeframe(mtfData, ALL_GRANULARITIES);
   }, [mtfData]);
 
-  // Auto-calculate trade levels based on confirmed signal
-  const tradeLevels = useMemo(() => {
-    const signal = multiTF?.confirmedSignal ?? analysis?.signal ?? 'NEUTRAL';
-    return calculateTradeLevels(candles, signal, currentPrice);
-  }, [candles, currentPrice, multiTF, analysis]);
+  // Locked trade levels — persist until price hits TP or SL
+  const [tradeLevels, setTradeLevels] = useState<import('@/lib/tradeLevels').TradeLevels | null>(null);
+
+  useEffect(() => {
+    // Check if current price hit TP or SL → clear levels
+    if (tradeLevels && currentPrice !== null) {
+      const { direction, takeProfit, stopLoss } = tradeLevels;
+      const hitTP = direction === 'long' ? currentPrice >= takeProfit : currentPrice <= takeProfit;
+      const hitSL = direction === 'long' ? currentPrice <= stopLoss : currentPrice >= stopLoss;
+      if (hitTP || hitSL) {
+        setTradeLevels(null);
+        return;
+      }
+    }
+
+    // Only calculate new levels if none are locked in
+    if (!tradeLevels) {
+      const signal = multiTF?.confirmedSignal ?? analysis?.signal ?? 'NEUTRAL';
+      const newLevels = calculateTradeLevels(candles, signal, currentPrice);
+      if (newLevels) {
+        setTradeLevels(newLevels);
+      }
+    }
+  }, [currentPrice, candles, multiTF, analysis]);
 
   const market = MARKETS.find(m => m.symbol === symbol);
   const activeTimeframe = TIMEFRAMES.find(t => t.granularity === granularity);
