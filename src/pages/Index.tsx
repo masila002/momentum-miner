@@ -5,15 +5,16 @@ import { analyzeCandles } from '@/lib/indicators';
 import { analyzeWithHMM } from '@/lib/hmm';
 import { analyzeMultiTimeframe, resetSignalState } from '@/lib/signalEngine';
 import { calculateTradeLevels } from '@/lib/tradeLevels';
+import { analyzePriceAction } from '@/lib/priceAction';
 import { MarketSelector } from '@/components/MarketSelector';
 import { SignalPanel } from '@/components/SignalPanel';
 import { CandleChart } from '@/components/CandleChart';
 import { MarketPressure } from '@/components/MarketPressure';
 import { TradeLevelsPanel } from '@/components/TradeLevelsPanel';
+import { PriceActionPanel } from '@/components/PriceActionPanel';
 import { TickerBar } from '@/components/TickerBar';
 import { MARKETS, TIMEFRAMES } from '@/lib/markets';
 import { cn } from '@/lib/utils';
-
 const ALL_GRANULARITIES = TIMEFRAMES.map(t => t.granularity);
 
 const Index = () => {
@@ -49,6 +50,9 @@ const Index = () => {
   const multiTF = useMemo(() => {
     return analyzeMultiTimeframe(mtfData, ALL_GRANULARITIES);
   }, [mtfData]);
+
+  // Price action analysis
+  const priceAction = useMemo(() => analyzePriceAction(candles), [candles]);
 
   // Locked trade levels — persist until price hits TP or SL
   const [tradeLevels, setTradeLevels] = useState<import('@/lib/tradeLevels').TradeLevels | null>(null);
@@ -133,7 +137,7 @@ const Index = () => {
 
           {/* Chart area */}
           <div className="flex-1 min-h-0">
-            <CandleChart candles={candles} hmm={hmm} timeframeLabel={activeTimeframe?.label || '1m'} tradeLevels={tradeLevels} />
+            <CandleChart candles={candles} hmm={hmm} timeframeLabel={activeTimeframe?.label || '1m'} tradeLevels={tradeLevels} priceAction={priceAction} />
           </div>
         </div>
 
@@ -142,6 +146,7 @@ const Index = () => {
           <div className="p-1.5 space-y-1.5">
             <SignalPanel analysis={analysis} hmm={hmm} currentPrice={currentPrice} symbol={symbol} multiTF={multiTF} />
             <TradeLevelsPanel levels={tradeLevels} />
+            <PriceActionPanel priceAction={priceAction} />
             <MarketPressure candles={candles} hmm={hmm} />
           </div>
         </div>

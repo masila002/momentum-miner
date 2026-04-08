@@ -2,15 +2,17 @@ import { useMemo } from 'react';
 import type { Candle } from '@/lib/indicators';
 import type { HMMResult } from '@/lib/hmm';
 import type { TradeLevels } from '@/lib/tradeLevels';
+import type { PriceActionResult } from '@/lib/priceAction';
 
 interface CandleChartProps {
   candles: Candle[];
   hmm: HMMResult | null;
   timeframeLabel?: string;
   tradeLevels?: TradeLevels | null;
+  priceAction?: PriceActionResult | null;
 }
 
-export function CandleChart({ candles, hmm, timeframeLabel = '1M', tradeLevels }: CandleChartProps) {
+export function CandleChart({ candles, hmm, timeframeLabel = '1M', tradeLevels, priceAction }: CandleChartProps) {
   const displayCandles = candles.slice(-80);
 
   const chart = useMemo(() => {
@@ -141,6 +143,47 @@ export function CandleChart({ candles, hmm, timeframeLabel = '1M', tradeLevels }
           );
         })}
 
+        {/* S/R level lines */}
+        {priceAction?.srLevels.map((sr, i) => {
+          const y = yScale(sr.price);
+          if (y < padding.top || y > height) return null;
+          const color = sr.type === 'support' ? 'hsl(142, 50%, 50%)' : 'hsl(0, 60%, 55%)';
+          return (
+            <g key={`sr${i}`}>
+              <line x1={padding.left} y1={y} x2={width - padding.right} y2={y}
+                stroke={color} strokeWidth={0.6} strokeDasharray="2 3" opacity={0.5} />
+              <text x={padding.left + 2} y={y - 2}
+                fill={color} fontSize={7} fontFamily="JetBrains Mono, monospace" opacity={0.6}>
+                {sr.type === 'support' ? 'S' : 'R'}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Pattern markers */}
+        {priceAction?.patterns.filter(p => {
+          const offset = candles.length - displayCandles.length;
+          return p.index >= offset && p.index < candles.length;
+        }).map((p, i) => {
+          const offset = candles.length - displayCandles.length;
+          const di = p.index - offset;
+          const c = displayCandles[di];
+          if (!c) return null;
+          const x = padding.left + di * candleW + candleW / 2;
+          const isBull = p.bias === 'bullish';
+          const y = isBull ? yScale(c.low) + 10 : yScale(c.high) - 6;
+          const color = isBull ? 'hsl(142, 60%, 55%)' : p.bias === 'bearish' ? 'hsl(0, 70%, 55%)' : 'hsl(45, 70%, 55%)';
+          return (
+            <g key={`pat${i}`}>
+              <text x={x} y={y}
+                fill={color} fontSize={6} fontFamily="JetBrains Mono, monospace"
+                textAnchor="middle" fontWeight="bold" opacity={0.8}>
+                {p.bias === 'bullish' ? '▲' : p.bias === 'bearish' ? '▼' : '◆'}
+              </text>
+            </g>
+          );
+        })}
+
         {/* Trade level lines: TP, Entry, SL */}
         {tradeLevels && (() => {
           const levels = [
@@ -218,7 +261,7 @@ export function CandleChart({ candles, hmm, timeframeLabel = '1M', tradeLevels }
         })}
       </svg>
     );
-  }, [displayCandles, hmm, tradeLevels]);
+  }, [displayCandles, hmm, tradeLevels, priceAction]);
 
   return (
     <div className="terminal-panel flex-1 flex flex-col">
