@@ -30,6 +30,7 @@ const Index = () => {
   // Reset signal state on symbol change
   useEffect(() => {
     resetSignalState();
+    setTradeLevels(null);
   }, [symbol]);
 
   useEffect(() => {
