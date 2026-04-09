@@ -3,6 +3,7 @@ import type { Candle } from '@/lib/indicators';
 import type { HMMResult } from '@/lib/hmm';
 import type { TradeLevels } from '@/lib/tradeLevels';
 import type { PriceActionResult } from '@/lib/priceAction';
+import type { DivergenceResult } from '@/lib/divergence';
 
 interface CandleChartProps {
   candles: Candle[];
@@ -10,9 +11,10 @@ interface CandleChartProps {
   timeframeLabel?: string;
   tradeLevels?: TradeLevels | null;
   priceAction?: PriceActionResult | null;
+  divergence?: DivergenceResult | null;
 }
 
-export function CandleChart({ candles, hmm, timeframeLabel = '1M', tradeLevels, priceAction }: CandleChartProps) {
+export function CandleChart({ candles, hmm, timeframeLabel = '1M', tradeLevels, priceAction, divergence }: CandleChartProps) {
   const displayCandles = candles.slice(-80);
 
   const chart = useMemo(() => {
