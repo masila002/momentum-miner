@@ -56,6 +56,9 @@ const Index = () => {
   // Price action analysis
   const priceAction = useMemo(() => analyzePriceAction(candles), [candles]);
 
+  // Divergence detection
+  const divergence = useMemo(() => detectDivergence(candles), [candles]);
+
   // Locked trade levels — persist until price hits TP or SL
   const [tradeLevels, setTradeLevels] = useState<import('@/lib/tradeLevels').TradeLevels | null>(null);
 
