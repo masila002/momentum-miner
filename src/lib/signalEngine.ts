@@ -1,5 +1,6 @@
 import type { Candle, AnalysisResult, SignalLevel } from './indicators';
 import { analyzeCandles, ema } from './indicators';
+import type { DivergenceResult } from './divergence';
 
 export interface MultiTFSignal {
   /** Per-timeframe analysis results */
@@ -14,6 +15,8 @@ export interface MultiTFSignal {
   cooldownActive: boolean;
   /** Dominant trend direction from higher TF */
   trendDirection: 'up' | 'down' | 'flat';
+  /** Divergence warning that may override signal */
+  divergenceWarning: DivergenceResult | null;
 }
 
 const TF_LABELS: Record<number, string> = {
@@ -39,7 +42,6 @@ function detectTrend(candles: Candle[]): 'up' | 'down' | 'flat' {
   const closes = candles.map(c => c.close);
   const ema50 = ema(closes, 50);
   const len = ema50.length;
-  // Compare last EMA value to 10 periods ago
   const current = ema50[len - 1];
   const past = ema50[len - 11] ?? ema50[0];
   const pctChange = (current - past) / past;
@@ -53,7 +55,8 @@ function detectTrend(candles: Candle[]): 'up' | 'down' | 'flat' {
  */
 export function analyzeMultiTimeframe(
   candlesByGranularity: Record<number, Candle[]>,
-  granularities: number[]
+  granularities: number[],
+  divergence?: DivergenceResult | null
 ): MultiTFSignal {
   const timeframes = granularities.map(g => ({
     granularity: g,
@@ -61,7 +64,6 @@ export function analyzeMultiTimeframe(
     analysis: candlesByGranularity[g]?.length ? analyzeCandles(candlesByGranularity[g]) : null,
   }));
 
-  // Count buy vs sell agreement
   let buyCount = 0;
   let sellCount = 0;
   let totalScore = 0;
@@ -75,12 +77,10 @@ export function analyzeMultiTimeframe(
     else if (tf.analysis.score <= -20) sellCount++;
   }
 
-  // Trend from highest timeframe
   const highestGranularity = Math.max(...granularities);
   const highestCandles = candlesByGranularity[highestGranularity] || [];
   const trendDirection = detectTrend(highestCandles);
 
-  // Determine raw signal from multi-TF agreement
   let rawSignal: SignalLevel = 'NEUTRAL';
   let agreement = 0;
   const avgScore = validCount > 0 ? Math.round(totalScore / validCount) : 0;
@@ -95,12 +95,23 @@ export function analyzeMultiTimeframe(
     agreement = Math.max(buyCount, sellCount);
   }
 
-  // Trend filter: only allow signals in trend direction
+  // Trend filter
   if (trendDirection === 'up' && (rawSignal === 'SELL' || rawSignal === 'STRONG_SELL')) {
-    rawSignal = 'NEUTRAL'; // Against trend
+    rawSignal = 'NEUTRAL';
   }
   if (trendDirection === 'down' && (rawSignal === 'BUY' || rawSignal === 'STRONG_BUY')) {
-    rawSignal = 'NEUTRAL'; // Against trend
+    rawSignal = 'NEUTRAL';
+  }
+
+  // Divergence filter: downgrade signals that conflict with active divergence
+  if (divergence?.active) {
+    const divBias = divergence.active.bias;
+    if (divBias === 'bearish' && (rawSignal === 'STRONG_BUY' || rawSignal === 'BUY')) {
+      rawSignal = rawSignal === 'STRONG_BUY' ? 'BUY' : 'NEUTRAL';
+    }
+    if (divBias === 'bullish' && (rawSignal === 'STRONG_SELL' || rawSignal === 'SELL')) {
+      rawSignal = rawSignal === 'STRONG_SELL' ? 'SELL' : 'NEUTRAL';
+    }
   }
 
   // Cooldown logic
@@ -111,7 +122,7 @@ export function analyzeMultiTimeframe(
   
   let confirmedSignal: SignalLevel;
   if (cooldownActive) {
-    confirmedSignal = lastSignal; // Keep previous signal during cooldown
+    confirmedSignal = lastSignal;
   } else {
     if (rawSignal !== lastSignal) {
       candlesSinceChange = 0;
@@ -127,6 +138,7 @@ export function analyzeMultiTimeframe(
     confirmedScore: avgScore,
     cooldownActive,
     trendDirection,
+    divergenceWarning: divergence ?? null,
   };
 }
 

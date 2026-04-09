@@ -6,6 +6,7 @@ import { analyzeWithHMM } from '@/lib/hmm';
 import { analyzeMultiTimeframe, resetSignalState } from '@/lib/signalEngine';
 import { calculateTradeLevels } from '@/lib/tradeLevels';
 import { analyzePriceAction } from '@/lib/priceAction';
+import { detectDivergence } from '@/lib/divergence';
 import { MarketSelector } from '@/components/MarketSelector';
 import { SignalPanel } from '@/components/SignalPanel';
 import { CandleChart } from '@/components/CandleChart';
@@ -48,11 +49,15 @@ const Index = () => {
 
   // Multi-timeframe confirmed signal
   const multiTF = useMemo(() => {
-    return analyzeMultiTimeframe(mtfData, ALL_GRANULARITIES);
-  }, [mtfData]);
+    const div = detectDivergence(candles);
+    return analyzeMultiTimeframe(mtfData, ALL_GRANULARITIES, div);
+  }, [mtfData, candles]);
 
   // Price action analysis
   const priceAction = useMemo(() => analyzePriceAction(candles), [candles]);
+
+  // Divergence detection
+  const divergence = useMemo(() => detectDivergence(candles), [candles]);
 
   // Locked trade levels — persist until price hits TP or SL
   const [tradeLevels, setTradeLevels] = useState<import('@/lib/tradeLevels').TradeLevels | null>(null);
@@ -137,7 +142,7 @@ const Index = () => {
 
           {/* Chart area */}
           <div className="flex-1 min-h-0">
-            <CandleChart candles={candles} hmm={hmm} timeframeLabel={activeTimeframe?.label || '1m'} tradeLevels={tradeLevels} priceAction={priceAction} />
+            <CandleChart candles={candles} hmm={hmm} timeframeLabel={activeTimeframe?.label || '1m'} tradeLevels={tradeLevels} priceAction={priceAction} divergence={divergence} />
           </div>
         </div>
 

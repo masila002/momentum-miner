@@ -1,7 +1,7 @@
 import type { AnalysisResult } from '@/lib/indicators';
 import type { HMMResult } from '@/lib/hmm';
 import type { MultiTFSignal } from '@/lib/signalEngine';
-import { TrendingUp, TrendingDown, Minus, Brain, ShieldCheck, Clock, ArrowUpCircle, ArrowDownCircle, CircleDot } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Brain, ShieldCheck, Clock, ArrowUpCircle, ArrowDownCircle, CircleDot, AlertTriangle } from 'lucide-react';
 
 interface SignalPanelProps {
   analysis: AnalysisResult | null;
@@ -107,6 +107,17 @@ export function SignalPanel({ analysis, hmm, currentPrice, symbol, multiTF }: Si
             <div className="flex items-center justify-center gap-1 text-[9px] text-muted-foreground font-mono">
               <Clock className="w-3 h-3" />
               <span>COOLDOWN</span>
+            </div>
+          )}
+          {multiTF?.divergenceWarning?.active && (
+            <div className={`flex items-center justify-center gap-1 text-[9px] font-mono font-bold ${
+              multiTF.divergenceWarning.active.bias === 'bullish' ? 'text-bullish' : 'text-bearish'
+            }`}>
+              <AlertTriangle className="w-3 h-3" />
+              <span>{multiTF.divergenceWarning.active.label.toUpperCase()}</span>
+              <span className="text-muted-foreground font-normal">
+                ({(multiTF.divergenceWarning.active.strength * 100).toFixed(0)}%)
+              </span>
             </div>
           )}
         </div>

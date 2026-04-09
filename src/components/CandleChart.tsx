@@ -3,6 +3,7 @@ import type { Candle } from '@/lib/indicators';
 import type { HMMResult } from '@/lib/hmm';
 import type { TradeLevels } from '@/lib/tradeLevels';
 import type { PriceActionResult } from '@/lib/priceAction';
+import type { DivergenceResult } from '@/lib/divergence';
 
 interface CandleChartProps {
   candles: Candle[];
@@ -10,9 +11,10 @@ interface CandleChartProps {
   timeframeLabel?: string;
   tradeLevels?: TradeLevels | null;
   priceAction?: PriceActionResult | null;
+  divergence?: DivergenceResult | null;
 }
 
-export function CandleChart({ candles, hmm, timeframeLabel = '1M', tradeLevels, priceAction }: CandleChartProps) {
+export function CandleChart({ candles, hmm, timeframeLabel = '1M', tradeLevels, priceAction, divergence }: CandleChartProps) {
   const displayCandles = candles.slice(-80);
 
   const chart = useMemo(() => {
@@ -246,7 +248,39 @@ export function CandleChart({ candles, hmm, timeframeLabel = '1M', tradeLevels, 
           );
         })()}
 
-        {/* Volume bars */}
+        {/* Divergence lines */}
+        {divergence?.divergences.filter(d => {
+          const offset = candles.length - displayCandles.length;
+          return d.index >= offset && d.startIndex >= offset;
+        }).map((d, i) => {
+          const offset = candles.length - displayCandles.length;
+          const startDi = d.startIndex - offset;
+          const endDi = d.index - offset;
+          const cStart = displayCandles[startDi];
+          const cEnd = displayCandles[endDi];
+          if (!cStart || !cEnd) return null;
+          const isBull = d.bias === 'bullish';
+          const x1 = padding.left + startDi * candleW + candleW / 2;
+          const x2 = padding.left + endDi * candleW + candleW / 2;
+          const y1 = isBull ? yScale(cStart.low) + 14 : yScale(cStart.high) - 10;
+          const y2 = isBull ? yScale(cEnd.low) + 14 : yScale(cEnd.high) - 10;
+          const color = isBull ? 'hsl(142, 70%, 55%)' : 'hsl(0, 70%, 55%)';
+          const isRecent = d.index >= candles.length - 10;
+          return (
+            <g key={`div${i}`} opacity={isRecent ? 0.9 : 0.4}>
+              <line x1={x1} y1={y1} x2={x2} y2={y2}
+                stroke={color} strokeWidth={1.2} strokeDasharray="4 2" />
+              <circle cx={x1} cy={y1} r={2} fill={color} />
+              <circle cx={x2} cy={y2} r={2} fill={color} />
+              <text x={x2 + 3} y={y2 - 3}
+                fill={color} fontSize={6} fontFamily="JetBrains Mono, monospace"
+                fontWeight="bold" opacity={0.9}>
+                {d.label}
+              </text>
+            </g>
+          );
+        })}
+
         <line x1={padding.left} y1={height} x2={width - padding.right} y2={height}
           stroke="hsl(220, 14%, 15%)" strokeWidth={0.5} />
         {displayCandles.map((c, i) => {
@@ -267,7 +301,7 @@ export function CandleChart({ candles, hmm, timeframeLabel = '1M', tradeLevels, 
         })}
       </svg>
     );
-  }, [displayCandles, hmm, tradeLevels, priceAction]);
+  }, [displayCandles, hmm, tradeLevels, priceAction, divergence]);
 
   return (
     <div className="terminal-panel flex-1 flex flex-col">
