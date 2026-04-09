@@ -160,7 +160,7 @@ export function CandleChart({ candles, hmm, timeframeLabel = '1M', tradeLevels, 
           );
         })}
 
-        {/* Pattern markers */}
+        {/* Pattern markers with labels */}
         {priceAction?.patterns.filter(p => {
           const offset = candles.length - displayCandles.length;
           return p.index >= offset && p.index < candles.length;
@@ -171,14 +171,20 @@ export function CandleChart({ candles, hmm, timeframeLabel = '1M', tradeLevels, 
           if (!c) return null;
           const x = padding.left + di * candleW + candleW / 2;
           const isBull = p.bias === 'bullish';
-          const y = isBull ? yScale(c.low) + 10 : yScale(c.high) - 6;
+          const markerY = isBull ? yScale(c.low) + 8 : yScale(c.high) - 4;
+          const labelY = isBull ? markerY + 8 : markerY - 5;
           const color = isBull ? 'hsl(142, 60%, 55%)' : p.bias === 'bearish' ? 'hsl(0, 70%, 55%)' : 'hsl(45, 70%, 55%)';
           return (
             <g key={`pat${i}`}>
-              <text x={x} y={y}
+              <text x={x} y={markerY}
                 fill={color} fontSize={6} fontFamily="JetBrains Mono, monospace"
-                textAnchor="middle" fontWeight="bold" opacity={0.8}>
-                {p.bias === 'bullish' ? '▲' : p.bias === 'bearish' ? '▼' : '◆'}
+                textAnchor="middle" fontWeight="bold" opacity={0.9}>
+                {isBull ? '▲' : p.bias === 'bearish' ? '▼' : '◆'}
+              </text>
+              <text x={x} y={labelY}
+                fill={color} fontSize={5.5} fontFamily="JetBrains Mono, monospace"
+                textAnchor="middle" opacity={0.75}>
+                {p.label}
               </text>
             </g>
           );
