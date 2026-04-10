@@ -64,17 +64,6 @@ export function detectPatterns(candles: Candle[]): CandlePattern[] {
       continue;
     }
 
-    // Bullish Engulfing
-    if (!isBullish(prev) && isBullish(c) && c.open <= prev.close && c.close >= prev.open && body > bodySize(prev)) {
-      patterns.push({ index: i, type: 'bullish_engulfing', label: 'Bull Eng', bias: 'bullish' });
-      continue;
-    }
-
-    // Bearish Engulfing
-    if (isBullish(prev) && !isBullish(c) && c.open >= prev.close && c.close <= prev.open && body > bodySize(prev)) {
-      patterns.push({ index: i, type: 'bearish_engulfing', label: 'Bear Eng', bias: 'bearish' });
-      continue;
-    }
 
     // Morning Star (3-candle)
     if (!isBullish(prev2) && bodySize(prev) / range(prev) < 0.3 && isBullish(c) && c.close > (prev2.open + prev2.close) / 2) {
