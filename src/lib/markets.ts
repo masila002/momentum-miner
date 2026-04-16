@@ -21,12 +21,12 @@ export const MARKETS: Market[] = [
   { symbol: '1HZ100V', label: 'Volatility 100 (1s)', category: 'volatility' },
   // Boom
   { symbol: 'BOOM300N', label: 'Boom 300', category: 'boom' },
-  { symbol: 'BOOM500N', label: 'Boom 500', category: 'boom' },
-  { symbol: 'BOOM1000N', label: 'Boom 1000', category: 'boom' },
+  { symbol: 'BOOM500', label: 'Boom 500', category: 'boom' },
+  { symbol: 'BOOM1000', label: 'Boom 1000', category: 'boom' },
   // Crash
   { symbol: 'CRASH300N', label: 'Crash 300', category: 'crash' },
-  { symbol: 'CRASH500N', label: 'Crash 500', category: 'crash' },
-  { symbol: 'CRASH1000N', label: 'Crash 1000', category: 'crash' },
+  { symbol: 'CRASH500', label: 'Crash 500', category: 'crash' },
+  { symbol: 'CRASH1000', label: 'Crash 1000', category: 'crash' },
 ];
 
 export const MARKET_CATEGORIES = [
