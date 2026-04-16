@@ -1,18 +1,21 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useDerivWebSocket } from '@/hooks/useDerivWebSocket';
 import { useMultiTimeframe } from '@/hooks/useMultiTimeframe';
+import { useDerivTicks } from '@/hooks/useDerivTicks';
 import { analyzeCandles } from '@/lib/indicators';
 import { analyzeWithHMM } from '@/lib/hmm';
 import { analyzeMultiTimeframe, resetSignalState } from '@/lib/signalEngine';
 import { calculateTradeLevels } from '@/lib/tradeLevels';
 import { analyzePriceAction } from '@/lib/priceAction';
 import { detectDivergence } from '@/lib/divergence';
+import { analyzeSpikes, getSpikeMarketInfo } from '@/lib/spikeDetector';
 import { MarketSelector } from '@/components/MarketSelector';
 import { SignalPanel } from '@/components/SignalPanel';
 import { CandleChart } from '@/components/CandleChart';
 import { MarketPressure } from '@/components/MarketPressure';
 import { TradeLevelsPanel } from '@/components/TradeLevelsPanel';
 import { PriceActionPanel } from '@/components/PriceActionPanel';
+import { SpikePanel } from '@/components/SpikePanel';
 import { TickerBar } from '@/components/TickerBar';
 import { MARKETS, TIMEFRAMES } from '@/lib/markets';
 import { cn } from '@/lib/utils';
@@ -28,6 +31,11 @@ const Index = () => {
 
   // Multi-timeframe data for signal confirmation
   const { data: mtfData, connected: mtfConnected } = useMultiTimeframe(symbol, ALL_GRANULARITIES);
+
+  // Tick stream — only enabled for Boom/Crash markets
+  const spikeMarket = useMemo(() => getSpikeMarketInfo(symbol), [symbol]);
+  const { ticks, connected: ticksConnected } = useDerivTicks(symbol, !!spikeMarket, 2500);
+  const spikeAnalysis = useMemo(() => analyzeSpikes(ticks, symbol), [ticks, symbol]);
 
   // Reset signal state on symbol change
   useEffect(() => {
@@ -149,6 +157,9 @@ const Index = () => {
         {/* Right Panel - Signal + Pressure */}
         <div className="w-52 border-l border-border shrink-0 overflow-y-auto">
           <div className="p-1.5 space-y-1.5">
+            {spikeMarket && (
+              <SpikePanel analysis={spikeAnalysis} connected={ticksConnected} />
+            )}
             <SignalPanel analysis={analysis} hmm={hmm} currentPrice={currentPrice} symbol={symbol} multiTF={multiTF} />
             <TradeLevelsPanel levels={tradeLevels} />
             <PriceActionPanel priceAction={priceAction} />
