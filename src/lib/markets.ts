@@ -44,4 +44,6 @@ export const TIMEFRAMES: Timeframe[] = [
   { label: '1m', granularity: 60 },
   { label: '2m', granularity: 120 },
   { label: '5m', granularity: 300 },
+  { label: '30m', granularity: 1800 },
+  { label: '1h', granularity: 3600 },
 ];
