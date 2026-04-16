@@ -23,6 +23,8 @@ const TF_LABELS: Record<number, string> = {
   60: '1m',
   120: '2m',
   300: '5m',
+  1800: '30m',
+  3600: '1h',
 };
 
 // Minimum timeframes that must agree for a confirmed signal
